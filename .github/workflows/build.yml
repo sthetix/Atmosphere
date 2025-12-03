@@ -41,9 +41,9 @@ jobs:
     
     - name: Build Atmosphere (Release)
       run: make nx_release
-    
+
     - name: Build distribution package
-      run: make dist-no-debug
+      run: make -f atmosphere.mk dist-no-debug
     
     - name: Get Atmosphere version
       id: get_version
