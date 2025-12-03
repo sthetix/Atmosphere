@@ -1,0 +1,81 @@
+name: Build Atmosphere
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Setup devkitPro
+      uses: devkitPro/devkitpro-action@v1
+      with:
+        installers: switch-dev switch-glm switch-libjpeg-turbo devkitARM devkitarm-rules hactool
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install lz4 pycryptodome
+    
+    - name: Verify environment
+      run: |
+        echo "DEVKITPRO=$DEVKITPRO"
+        echo "DEVKITARM=$DEVKITARM"
+        echo "DEVKITA64=$DEVKITA64"
+        which hactool || echo "hactool not in PATH"
+    
+    - name: Build Atmosphere (Release)
+      run: |
+        export PATH="$DEVKITPRO/tools/bin:$PATH"
+        make nx_release
+    
+    - name: Build distribution package
+      run: |
+        export PATH="$DEVKITPRO/tools/bin:$PATH"
+        make dist-no-debug
+    
+    - name: Get Atmosphere version
+      id: get_version
+      run: |
+        VERSION_MAJOR=$(grep 'define ATMOSPHERE_RELEASE_VERSION_MAJOR' libraries/libvapours/include/vapours/ams/ams_api_version.h | tr -s [:blank:] | cut -d' ' -f3)
+        VERSION_MINOR=$(grep 'define ATMOSPHERE_RELEASE_VERSION_MINOR' libraries/libvapours/include/vapours/ams/ams_api_version.h | tr -s [:blank:] | cut -d' ' -f3)
+        VERSION_MICRO=$(grep 'define ATMOSPHERE_RELEASE_VERSION_MICRO' libraries/libvapours/include/vapours/ams/ams_api_version.h | tr -s [:blank:] | cut -d' ' -f3)
+        GIT_REV=$(git rev-parse --short HEAD)
+        VERSION="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MICRO}-${GIT_REV}"
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
+        echo "Atmosphere Version: ${VERSION}"
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: atmosphere-${{ steps.get_version.outputs.version }}
+        path: |
+          out/atmosphere-*.zip
+          out/fusee.bin
+        retention-days: 30
+        if-no-files-found: error
+    
+    - name: Upload individual components (for debugging)
+      uses: actions/upload-artifact@v4
+      with:
+        name: atmosphere-components-${{ steps.get_version.outputs.version }}
+        path: |
+          fusee/out/fusee.bin
+          fusee/out/package3
+        retention-days: 7
+        if-no-files-found: warn
