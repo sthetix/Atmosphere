@@ -22,11 +22,11 @@ jobs:
     - name: Install additional packages
       run: |
         # Skip sync due to server issues, install from local cache
-        dkp-pacman -S --noconfirm switch-dev switch-glm switch-libjpeg-turbo devkitARM devkitarm-rules 2>/dev/null || true
+        dkp-pacman -S --noconfirm switch-dev switch-glm switch-libjpeg-turbo devkitARM devkitarm-rules python python-pip 2>/dev/null || true
     
     - name: Install Python dependencies
       run: |
-        pip3 install --break-system-packages lz4 pycryptodome || pip3 install lz4 pycryptodome
+        python3 -m pip install --break-system-packages lz4 pycryptodome 2>/dev/null || python -m pip install lz4 pycryptodome || true
     
     - name: Verify environment
       run: |
