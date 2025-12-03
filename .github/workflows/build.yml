@@ -21,8 +21,8 @@ jobs:
     
     - name: Install additional packages
       run: |
-        dkp-pacman -Sy --noconfirm
-        dkp-pacman -S --noconfirm switch-dev switch-glm switch-libjpeg-turbo devkitARM devkitarm-rules
+        # Skip sync due to server issues, install from local cache
+        dkp-pacman -S --noconfirm switch-dev switch-glm switch-libjpeg-turbo devkitARM devkitarm-rules 2>/dev/null || true
     
     - name: Install Python dependencies
       run: |
