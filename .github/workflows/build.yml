@@ -18,9 +18,14 @@ jobs:
         submodules: recursive
     
     - name: Setup devkitPro
-      uses: devkitPro/devkitpro-action@v1
-      with:
-        installers: switch-dev switch-glm switch-libjpeg-turbo devkitARM devkitarm-rules hactool
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget
+        wget https://apt.devkitpro.org/install-devkitpro-pacman
+        chmod +x ./install-devkitpro-pacman
+        sudo ./install-devkitpro-pacman
+        sudo dkp-pacman -Sy
+        sudo dkp-pacman -S --noconfirm switch-dev switch-glm switch-libjpeg-turbo devkitARM devkitarm-rules hactool
     
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -34,20 +39,24 @@ jobs:
     
     - name: Verify environment
       run: |
+        export DEVKITPRO=/opt/devkitpro
+        export DEVKITARM=/opt/devkitpro/devkitARM
+        export DEVKITA64=/opt/devkitpro/devkitA64
+        export PATH="$DEVKITPRO/tools/bin:$PATH"
+        echo "DEVKITPRO=$DEVKITPRO" >> $GITHUB_ENV
+        echo "DEVKITARM=$DEVKITARM" >> $GITHUB_ENV
+        echo "DEVKITA64=$DEVKITA64" >> $GITHUB_ENV
+        echo "$DEVKITPRO/tools/bin" >> $GITHUB_PATH
         echo "DEVKITPRO=$DEVKITPRO"
         echo "DEVKITARM=$DEVKITARM"
         echo "DEVKITA64=$DEVKITA64"
         which hactool || echo "hactool not in PATH"
     
     - name: Build Atmosphere (Release)
-      run: |
-        export PATH="$DEVKITPRO/tools/bin:$PATH"
-        make nx_release
+      run: make nx_release
     
     - name: Build distribution package
-      run: |
-        export PATH="$DEVKITPRO/tools/bin:$PATH"
-        make dist-no-debug
+      run: make dist-no-debug
     
     - name: Get Atmosphere version
       id: get_version
