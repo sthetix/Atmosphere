@@ -19,7 +19,10 @@ jobs:
       with:
         submodules: recursive
         fetch-depth: 0
-    
+
+    - name: Mark repository as safe for git
+      run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
     - name: Install additional packages
       run: |
         # Skip sync due to server issues, install from local cache
