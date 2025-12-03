@@ -10,6 +10,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkita64:latest
     
     steps:
     - name: Checkout repository
@@ -17,40 +19,21 @@ jobs:
       with:
         submodules: recursive
     
-    - name: Setup devkitPro
+    - name: Install additional packages
       run: |
-        sudo apt-get update
-        sudo apt-get install -y wget
-        wget https://apt.devkitpro.org/install-devkitpro-pacman
-        chmod +x ./install-devkitpro-pacman
-        sudo ./install-devkitpro-pacman
-        sudo dkp-pacman -Sy
-        sudo dkp-pacman -S --noconfirm switch-dev switch-glm switch-libjpeg-turbo devkitARM devkitarm-rules hactool
-    
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.x'
+        dkp-pacman -Sy --noconfirm
+        dkp-pacman -S --noconfirm switch-dev switch-glm switch-libjpeg-turbo devkitARM devkitarm-rules
     
     - name: Install Python dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install lz4 pycryptodome
+        pip3 install --break-system-packages lz4 pycryptodome || pip3 install lz4 pycryptodome
     
     - name: Verify environment
       run: |
-        export DEVKITPRO=/opt/devkitpro
-        export DEVKITARM=/opt/devkitpro/devkitARM
-        export DEVKITA64=/opt/devkitpro/devkitA64
-        export PATH="$DEVKITPRO/tools/bin:$PATH"
-        echo "DEVKITPRO=$DEVKITPRO" >> $GITHUB_ENV
-        echo "DEVKITARM=$DEVKITARM" >> $GITHUB_ENV
-        echo "DEVKITA64=$DEVKITA64" >> $GITHUB_ENV
-        echo "$DEVKITPRO/tools/bin" >> $GITHUB_PATH
         echo "DEVKITPRO=$DEVKITPRO"
         echo "DEVKITARM=$DEVKITARM"
         echo "DEVKITA64=$DEVKITA64"
-        which hactool || echo "hactool not in PATH"
+        ls -la $DEVKITPRO/ || true
     
     - name: Build Atmosphere (Release)
       run: make nx_release
